@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 import numpy as np
 import cv2 as cv 
+import os
 
-intCamLoc = 0
+intCamLoc = 1
 try:
     objCam = cv.VideoCapture(intCamLoc, cv.CAP_DSHOW)
 except:
     objCam = "Error: Camera not found"
     print(objCam)
 
+strFileLoc = os.getcwd()
 state, arryFrameOld = objCam.read()
 arryFrameBlank = arryFrameOld-arryFrameOld
 
@@ -38,7 +40,7 @@ while (objCam != "Error: Camera not found"):
     arryFrame = cv.cvtColor(arryFrameRaw, cv.COLOR_BGR2GRAY)
     arryFrame = cv.GaussianBlur(arryFrame, (3,3), 2)
 
-
+    #contours start
     if arryFrameOld != arryFrameBlank:
         arryMask = BkgSubtractMOG(arryFrame)
         arryContours = Contours(arryMask)
@@ -46,7 +48,7 @@ while (objCam != "Error: Camera not found"):
         if Contours != 0:
             intObjects = 0
             arryBounds = np.zeros(len(arryContours)+1)
-            #for each list find bounds. Note: 0 is X 1 is Y
+            #for each list find bounds. Note: 0 is X, 1 is Y
             for intObjects in range(0, len(arryContours)):
                 arryBounds[intObjects] = (
                     arryContours[intObjects][0].min,    # X1
@@ -56,10 +58,17 @@ while (objCam != "Error: Camera not found"):
 
                 #draw box around each moving object
                 cv.rectangle(arryFrameRaw, 
-                             (arryContours[intObjects][0].min, arryContours[intObjects][1].min),
-                             (arryContours[intObjects][0].max,  arryContours[intObjects][1].max),
-                             (255,0,0))
+                    (arryContours[intObjects][0].min, arryContours[intObjects][1].min),
+                    (arryContours[intObjects][0].max, arryContours[intObjects][1].max),
+                    (255,0,0))
+               
+                #classify object (using keras generic for now) 
+                arryAreaOfInt = (
+                     arryFrameRaw[
+                        (arryContours[intObjects][0].min, arryContours[intObjects][1].min),
+                        (arryContours[intObjects][0].max, arryContours[intObjects][1].max)])
 
+                
     #save previous frame
     arryFrameOld = arryFrame
     cv.waitKey(1)
